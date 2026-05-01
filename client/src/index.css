@@ -721,3 +721,67 @@ textarea {
   font-size: 0.75rem;
   color: var(--muted);
 }
+
+/* ── Admin filters bar ── */
+.admin-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-filters__search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+}
+
+.admin-filters__tabs {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.admin-filters__tab {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--surface2);
+  transition: background 0.15s, color 0.15s;
+}
+
+.admin-filters__tab:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.admin-filters__tab--active {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* ── Admin toggle action buttons ── */
+.btn--toggle-off {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fecaca;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+.btn--toggle-off:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.28);
+}
+
+.btn--toggle-on {
+  background: rgba(74, 222, 128, 0.12);
+  color: #86efac;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+.btn--toggle-on:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.22);
+}
+
+/* ── Admin stat accent borders ── */
+.admin-stat--ok {
+  border-color: rgba(74, 222, 128, 0.2);
+}
+.admin-stat--off {
+  border-color: rgba(248, 113, 113, 0.2);
+}

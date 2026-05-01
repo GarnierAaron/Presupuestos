@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<PricingRuleService>();
         services.AddScoped<FlexiblePricingSettingsService>();
         services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddScoped<ISubscriptionAppService, SubscriptionAppService>();
         return services;
     }
 }

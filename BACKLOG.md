@@ -28,6 +28,7 @@ App **multi-tenant** para gestionar **insumos**, **servicios** (recetas de insum
 | **Pricing rules** | Reglas por tenant cuando *flexible pricing* está habilitado. |
 | **Admin global** | Rutas bajo `/api/admin/…`: listado/detalle usuarios, toggle `IsActive`, estadísticas. Política `SuperAdmin` + claim `super_admin`. |
 | **App config / devices** | Config remota y control de dispositivos (según opciones). |
+| **Suscripciones + MP** | Planes `Plans` (Free/Pro/Premium), `Subscriptions` por **tenant** (B2B); `POST /api/Subscriptions/create`, `GET /api/Subscriptions/me` usan contexto de organización (`tenant_id` o cabeceras de integración); webhook `POST /api/webhooks/mercadopago` (validación del pago vía API MP). Middleware `SubscriptionAccess` (`SubscriptionAccess:Enforce`) tras tenant; bypass Auth, admin, webhooks, create/me. |
 
 Migraciones EF: al arranque de la API se ejecuta `Database.MigrateAsync()` (revisar política en prod).
 
@@ -46,9 +47,11 @@ Autorización en cliente: detección de super admin leyendo el claim `super_admi
 
 ## Hecho recientemente (referencia)
 
+- [x] **Suscripciones v1 (backend)**: `Plan` + `Subscription` por **tenant**, preferencia Mercado Pago, webhook, middleware de acceso; migraciones EF incl. `SubscriptionTenantId`; config `MercadoPago` + `SubscriptionAccess`
 - [x] API multi-tenant + JWT + refresh
 - [x] Super admin en modelo + endpoints `/api/admin/users`, `/api/admin/stats`, toggle activo
 - [x] Cliente: pantalla `/admin`, navegación condicional, panel inicio super admin
+- [x] Admin UI: buscador por email u organización, filtros (Todos/Activos/Inactivos), confirmación accesible (ConfirmDialog), componentes `StatsCards` / `UsersTable` / `UserRow`, capa de servicio `src/services/adminService.ts`; columna Organización en tabla y `TenantName` en `AdminUserListItemDto`
 - [x] Arranque API con `MigrateAsync` (revisar política en prod)
 - [x] Tokens con `tenantName`; barra superior muestra organización; ayuda bajo “Organización” en registro
 
@@ -73,10 +76,11 @@ Objetivo: poder **cobrar**, **dar soporte** y **generar confianza** sin un big-b
 
 ### C. Monetización y acceso (cuando el flujo de negocio esté claro)
 
-- [ ] Modelo **`Subscription`** (tenant), estados `trialing|active|past_due|canceled`, `current_period_end`
-- [ ] **Webhook** PSP idempotente (tabla `ProcessedWebhookEvents`) que actualice suscripción y `User`/tenant activo
-- [ ] **Checkout** o link de pago recurrente (Stripe Customer Portal / MP preapproval) + email de confirmación
+- [x] Modelo **`Subscription`** por **tenant** (`TenantId`), alineado a B2B habitual
+- [x] **Webhook** PSP con validación remota del pago + idempotencia básica por `ExternalPaymentId` (sin tabla de eventos aún)
+- [x] **Checkout** vía preferencia MP (pago puntual por plan); **pendiente**: recurrente / preapproval / suscripción nativa MP
 - [ ] **Facturación mínima**: PDF o enlace a comprobante; datos fiscales tenant (opcional país)
+- [ ] **Email** post-pago / recordatorio fin de periodo
 
 ### D. Seguridad y cumplimiento
 
@@ -103,10 +107,28 @@ Objetivo: poder **cobrar**, **dar soporte** y **generar confianza** sin un big-b
 
 Priorizar según la sección **SaaS vendible** arriba; estos son los más acoplados al código actual:
 
-- [ ] **Suscripciones v1**: modelo `Subscription` (tenant o usuario), `period_end`, estado; alinear con `ExpirationDate` o reemplazar gradualmente
+- [ ] **Cliente suscripciones**: UI planes, llamada a `POST /api/Subscriptions/create`, redirección a `checkoutUrl`, banner si 403 por `SubscriptionAccess`, pantalla “Mi plan” con `GET /api/Subscriptions/me`
+- [ ] **Suscripciones — próximos avances** (ver sección dedicada abajo)
 - [ ] **Admin**: editar `ExpirationDate` desde UI + endpoint `PATCH` acotado a super admin
-- [ ] **Admin**: filtros (activo, texto email) y paginación en `GET /api/admin/users`
+- [x] **Admin**: filtros (activo, texto email) en UI — paginación backend pendiente
 - [ ] **Prod**: desactivar migración automática en arranque o gatear por entorno (`Development` only)
+
+---
+
+## Suscripciones — próximos avances (post v1 backend)
+
+Orden sugerido: producto visible → cobro recurrente → operación.
+
+- [x] **Modelo de cobro B2B**: suscripción ligada a **tenant** (migración `SubscriptionTenantId` repuebla `TenantId` desde el usuario dueño de la fila previa)
+- [ ] **Registro / onboarding**: opción “activar Free automático” al crear **tenant** para no depender de que el cliente llame a `create` manualmente
+- [ ] **Alineación con `User.ExpirationDate`**: una sola fuente de verdad (o documentar cuándo usa cada una: soporte manual vs plan pagado)
+- [ ] **Mercado Pago recurrente**: preapproval / plan de suscripción MP o debito automático; hoy es checkout por periodo vía preferencia
+- [ ] **Webhook endurecido**: tabla `ProcessedWebhookEvents` (id evento + payment id) para idempotencia total; rate limit / IP allowlist si MP lo documenta; revisar secret/signature si aplica a tu integración
+- [ ] **Back URLs + UX**: pantalla “Pago en proceso / falló” usando `BackUrls*` y deep link a la app
+- [ ] **Admin / soporte**: super admin ve plan y `EndDate` por **tenant**; acciones de soporte (extender periodo, cancelar)
+- [ ] **Límites por plan**: cantidad de usuarios por tenant, presupuestos/mes, etc., leídos de `Plan` o tabla `PlanFeature`
+- [ ] **Tests**: integración webhook (mock HTTP MP) + test flujo Free + test middleware con `Enforce` on/off
+- [ ] **Producción**: `MercadoPago:NotificationUrl` HTTPS estable; `SubscriptionAccess:Enforce` y comunicación a usuarios existentes antes del cutover
 
 ---
 

@@ -64,7 +64,9 @@ public class AdminUserService : IAdminUserService
             Email = u.Email,
             IsActive = u.IsActive,
             CreatedAt = u.CreatedAt,
-            LastLogin = u.LastLogin
+            LastLogin = u.LastLogin,
+            TenantId = u.TenantId,
+            TenantName = u.Tenant?.Name
         };
 
     private static AdminUserDetailDto MapDetail(User u, int deviceCount) =>

@@ -79,7 +79,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Presupuestos API",
         Version = "v1",
-        Description = "Rutas de negocio requieren JWT (Bearer). Claims habituales: tenant_id, sub (user id), email, role. Super admin: claim super_admin=true sin tenant_id. Panel: GET/PATCH /api/admin/users, GET /api/admin/stats. Tras login/registro, envía Authorization: Bearer {accessToken}. Refresh: POST /api/Auth/refresh. Sin token, el middleware de tenant acepta X-Tenant-Id / X-User-Id para integraciones; [Authorize] exige JWT."
+        Description = "Rutas de negocio requieren JWT (Bearer). Claims habituales: tenant_id, sub (user id), email, role. Super admin: claim super_admin=true sin tenant_id. Panel: GET/PATCH /api/admin/users, GET /api/admin/stats. Suscripciones: POST /api/Subscriptions/create, GET /api/Subscriptions/me; webhook MP: POST /api/webhooks/mercadopago (sin JWT). Con SubscriptionAccess:Enforce=true hace falta suscripción activa del tenant (excepciones: Auth, admin, webhooks, create/me). Tras login/registro, envía Authorization: Bearer {accessToken}. Refresh: POST /api/Auth/refresh. Sin token, el middleware de tenant acepta X-Tenant-Id / X-User-Id para integraciones; [Authorize] exige JWT."
     });
     options.OperationFilter<TenantHeadersOperationFilter>();
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -168,6 +168,7 @@ app.UseAuthentication();
 app.UseUserAccountValidation();
 app.UseDeviceValidation();
 app.UseTenantResolution();
+app.UseSubscriptionAccess();
 app.UseAuthorization();
 app.MapControllers();
 

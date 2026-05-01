@@ -78,6 +78,8 @@ public class DeviceValidationMiddleware
             return true;
         if (path.StartsWithSegments("/api/admin", StringComparison.OrdinalIgnoreCase))
             return true;
+        if (path.StartsWithSegments("/api/webhooks", StringComparison.OrdinalIgnoreCase))
+            return true;
         return false;
     }
 }

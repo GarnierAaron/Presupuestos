@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Presupuestos.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Presupuestos.Infrastructure.Persistence;
 namespace Presupuestos.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260501041422_SubscriptionsPlansMercadoPago")]
+    partial class SubscriptionsPlansMercadoPago
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -381,7 +384,7 @@ namespace Presupuestos.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -392,7 +395,7 @@ namespace Presupuestos.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PreferenceId");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Subscriptions", (string)null);
                 });
@@ -588,15 +591,15 @@ namespace Presupuestos.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Presupuestos.Domain.Entities.Tenant", "Tenant")
+                    b.HasOne("Presupuestos.Domain.Entities.User", "User")
                         .WithMany("Subscriptions")
-                        .HasForeignKey("TenantId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Plan");
 
-                    b.Navigation("Tenant");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Presupuestos.Domain.Entities.User", b =>
@@ -646,8 +649,6 @@ namespace Presupuestos.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Services");
 
-                    b.Navigation("Subscriptions");
-
                     b.Navigation("Users");
                 });
 
@@ -656,6 +657,8 @@ namespace Presupuestos.Infrastructure.Persistence.Migrations
                     b.Navigation("Devices");
 
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618
         }

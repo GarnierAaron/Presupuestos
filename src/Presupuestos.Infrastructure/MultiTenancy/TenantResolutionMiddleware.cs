@@ -110,6 +110,8 @@ public class TenantResolutionMiddleware
             return true;
         if (path.StartsWithSegments("/api/app-config", StringComparison.OrdinalIgnoreCase))
             return true;
+        if (path.StartsWithSegments("/api/webhooks", StringComparison.OrdinalIgnoreCase))
+            return true;
         return false;
     }
 }

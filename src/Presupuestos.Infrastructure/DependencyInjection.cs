@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Presupuestos.Application.Abstractions;
 using Presupuestos.Application.Options;
+using Presupuestos.Infrastructure.MercadoPago;
 using Presupuestos.Infrastructure.MultiTenancy;
 using Presupuestos.Infrastructure.Persistence;
 using Presupuestos.Infrastructure.Security;
@@ -16,6 +17,8 @@ public static class DependencyInjection
     {
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<DeviceControlOptions>(configuration.GetSection(DeviceControlOptions.SectionName));
+        services.Configure<MercadoPagoOptions>(configuration.GetSection(MercadoPagoOptions.SectionName));
+        services.Configure<SubscriptionAccessOptions>(configuration.GetSection(SubscriptionAccessOptions.SectionName));
 
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantContext, HttpTenantContext>();
@@ -29,8 +32,12 @@ public static class DependencyInjection
         services.AddScoped<IDeviceRepository, DeviceRepository>();
         services.AddScoped<IAppConfigRepository, AppConfigRepository>();
         services.AddScoped<IPricingRuleRepository, PricingRuleRepository>();
+        services.AddScoped<IPlanRepository, PlanRepository>();
+        services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();
+
+        services.AddHttpClient<IMercadoPagoPaymentsApi, MercadoPagoPaymentsApi>();
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
@@ -46,4 +53,7 @@ public static class DependencyInjection
 
     public static IApplicationBuilder UseDeviceValidation(this IApplicationBuilder app) =>
         app.UseMiddleware<DeviceValidationMiddleware>();
+
+    public static IApplicationBuilder UseSubscriptionAccess(this IApplicationBuilder app) =>
+        app.UseMiddleware<SubscriptionAccessMiddleware>();
 }

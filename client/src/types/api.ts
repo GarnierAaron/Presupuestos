@@ -36,6 +36,8 @@ export interface AdminUserListItemDto {
   isActive: boolean
   createdAt: string
   lastLogin: string | null
+  tenantId: string | null
+  tenantName: string | null
 }
 
 export interface AdminUserDetailDto {

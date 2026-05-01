@@ -18,6 +18,8 @@ public class AppDbContext : DbContext
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<AppConfig> AppConfigs => Set<AppConfig>();
     public DbSet<PricingRule> PricingRules => Set<PricingRule>();
+    public DbSet<Plan> Plans => Set<Plan>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -135,6 +137,39 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.ServiceId);
             e.HasOne(x => x.Budget).WithMany(b => b.Details).HasForeignKey(x => x.BudgetId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Service).WithMany(s => s.BudgetDetails).HasForeignKey(x => x.ServiceId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Plan>(e =>
+        {
+            e.ToTable("Plans");
+            e.HasKey(x => x.Name);
+            e.Property(x => x.Name).HasMaxLength(50);
+            e.Property(x => x.Price).HasPrecision(18, 4);
+            e.HasData(
+                new Plan { Name = "Free", Price = 0m, DurationDays = 0 },
+                new Plan { Name = "Pro", Price = 14900m, DurationDays = 30 },
+                new Plan { Name = "Premium", Price = 29900m, DurationDays = 30 });
+        });
+
+        modelBuilder.Entity<Subscription>(e =>
+        {
+            e.ToTable("Subscriptions");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.PlanName).HasMaxLength(50);
+            e.Property(x => x.Status).HasMaxLength(32);
+            e.Property(x => x.ExternalPaymentId).HasMaxLength(64);
+            e.Property(x => x.PreferenceId).HasMaxLength(128);
+            e.HasIndex(x => x.TenantId);
+            e.HasIndex(x => x.ExternalPaymentId);
+            e.HasIndex(x => x.PreferenceId);
+            e.HasOne(x => x.Tenant)
+                .WithMany(t => t.Subscriptions)
+                .HasForeignKey(x => x.TenantId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Plan)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(x => x.PlanName)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

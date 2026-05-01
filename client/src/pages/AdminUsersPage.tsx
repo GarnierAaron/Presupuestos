@@ -1,18 +1,28 @@
 import axios from 'axios'
-import { useCallback, useEffect, useState } from 'react'
-import {
-  fetchAdminStats,
-  fetchAdminUser,
-  fetchAdminUsers,
-  toggleAdminUserActive,
-} from '../api/admin'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ConfirmDialog } from '../components/admin/ConfirmDialog'
+import { StatsCards } from '../components/admin/StatsCards'
+import { UsersTable } from '../components/admin/UsersTable'
 import { useAuth } from '../context/AuthContext'
-import type { AdminStatsDto, AdminUserDetailDto, AdminUserListItemDto } from '../types/api'
+import { getStats, getUserDetail, getUsers, toggleUser } from '../services/adminService'
+import type {
+  AdminStatsDto,
+  AdminUserDetailDto,
+  AdminUserListItemDto,
+} from '../types/api'
+
+type FilterStatus = 'all' | 'active' | 'inactive'
 
 function formatDt(iso: string | null) {
   if (!iso) return '—'
   try {
-    return new Date(iso).toLocaleString()
+    return new Date(iso).toLocaleString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   } catch {
     return iso
   }
@@ -26,24 +36,32 @@ function roleLabel(role: number) {
 
 export function AdminUsersPage() {
   const { userId } = useAuth()
+
+  // ── Datos principales ──
   const [stats, setStats] = useState<AdminStatsDto | null>(null)
   const [users, setUsers] = useState<AdminUserListItemDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
 
+  // ── Modal detalle ──
   const [detail, setDetail] = useState<AdminUserDetailDto | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
 
+  // ── Confirmación toggle ──
+  const [pendingToggle, setPendingToggle] = useState<AdminUserListItemDto | null>(null)
+
+  // ── Filtros / búsqueda ──
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
+
+  // ── Carga de datos ──
   const load = useCallback(async (signal?: AbortSignal) => {
     setError(null)
     setLoading(true)
     try {
-      const [s, u] = await Promise.all([
-        fetchAdminStats(signal),
-        fetchAdminUsers(signal),
-      ])
+      const [s, u] = await Promise.all([getStats(signal), getUsers(signal)])
       setStats(s)
       setUsers(u)
     } catch (e: unknown) {
@@ -64,16 +82,33 @@ export function AdminUsersPage() {
     return () => ac.abort()
   }, [load])
 
+  // ── Usuarios filtrados ──
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return users.filter((u) => {
+      const matchSearch =
+        q === '' ||
+        u.email.toLowerCase().includes(q) ||
+        (u.tenantName?.toLowerCase().includes(q) ?? false)
+      const matchStatus =
+        filterStatus === 'all' ||
+        (filterStatus === 'active' && u.isActive) ||
+        (filterStatus === 'inactive' && !u.isActive)
+      return matchSearch && matchStatus
+    })
+  }, [users, search, filterStatus])
+
+  // ── Detalle ──
   const openDetail = async (id: string) => {
     setDetailOpen(true)
     setDetail(null)
     setDetailLoading(true)
     try {
-      const d = await fetchAdminUser(id)
+      const d = await getUserDetail(id)
       setDetail(d)
     } catch {
-      setDetail(null)
       window.alert('No se pudo cargar el detalle del usuario.')
+      setDetailOpen(false)
     } finally {
       setDetailLoading(false)
     }
@@ -84,22 +119,26 @@ export function AdminUsersPage() {
     setDetail(null)
   }
 
-  const onToggle = async (id: string, email: string) => {
-    if (userId && id === userId) {
+  // ── Toggle activo/inactivo ──
+  const requestToggle = (user: AdminUserListItemDto) => {
+    if (userId && user.id === userId) {
       window.alert('No podés desactivar tu propia cuenta desde aquí.')
       return
     }
-    const ok = window.confirm(
-      `¿Cambiar el estado activo/inactivo de ${email}?\nLos usuarios inactivos no podrán usar la app (403).`
-    )
-    if (!ok) return
+    setPendingToggle(user)
+  }
+
+  const confirmToggle = async () => {
+    if (!pendingToggle) return
+    const { id } = pendingToggle
+    setPendingToggle(null)
     setBusyId(id)
     setError(null)
     try {
-      await toggleAdminUserActive(id)
+      await toggleUser(id)
       await load()
       if (detail?.id === id) {
-        const d = await fetchAdminUser(id)
+        const d = await getUserDetail(id)
         setDetail(d)
       }
     } catch {
@@ -109,106 +148,99 @@ export function AdminUsersPage() {
     }
   }
 
+  const cancelToggle = () => setPendingToggle(null)
+
   return (
     <div className="page page--admin">
+      {/* ── Encabezado ── */}
       <div className="page__head">
         <div>
-          <h1>Administración</h1>
+          <h1>Administración de usuarios</h1>
           <p className="lead" style={{ marginBottom: 0 }}>
-            Usuarios registrados, acceso a la app y vista previa hacia suscripciones (fechas de
-            caducidad).
+            Usuarios registrados, acceso a la app y fechas de caducidad.
           </p>
         </div>
-        <button type="button" className="btn btn--ghost" onClick={() => void load()} disabled={loading}>
-          Actualizar
+        <button
+          type="button"
+          id="admin-refresh-btn"
+          className="btn btn--ghost"
+          onClick={() => void load()}
+          disabled={loading}
+        >
+          {loading ? 'Cargando…' : 'Actualizar'}
         </button>
       </div>
 
+      {/* ── Error global ── */}
       {error ? (
         <div className="banner banner--warn" role="alert">
           {error}
         </div>
       ) : null}
 
-      {stats ? (
-        <div className="admin-stat-grid">
-          <div className="admin-stat">
-            <span className="admin-stat__label">Total</span>
-            <strong className="admin-stat__value">{stats.totalUsers}</strong>
-          </div>
-          <div className="admin-stat">
-            <span className="admin-stat__label">Activos</span>
-            <strong className="admin-stat__value admin-stat__value--ok">{stats.activeUsers}</strong>
-          </div>
-          <div className="admin-stat">
-            <span className="admin-stat__label">Inactivos</span>
-            <strong className="admin-stat__value admin-stat__value--off">
-              {stats.inactiveUsers}
-            </strong>
-          </div>
-        </div>
-      ) : null}
+      {/* ── Stats ── */}
+      {stats ? <StatsCards stats={stats} /> : null}
 
-      <section style={{ marginTop: '1.5rem' }}>
-        <h2 className="sr-only">Listado</h2>
+      {/* ── Buscador y filtros ── */}
+      <div className="admin-filters" style={{ marginTop: '1.5rem' }}>
+        <input
+          id="admin-search"
+          type="search"
+          placeholder="Buscar por email u organización…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="admin-filters__search"
+          aria-label="Buscar usuario por email u organización"
+        />
+        <div className="admin-filters__tabs" role="group" aria-label="Filtrar por estado">
+          {(['all', 'active', 'inactive'] as FilterStatus[]).map((f) => (
+            <button
+              key={f}
+              type="button"
+              id={`admin-filter-${f}`}
+              className={`btn btn--small admin-filters__tab${filterStatus === f ? ' admin-filters__tab--active' : ''}`}
+              onClick={() => setFilterStatus(f)}
+            >
+              {f === 'all' ? 'Todos' : f === 'active' ? 'Activos' : 'Inactivos'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Tabla ── */}
+      <section style={{ marginTop: '1rem' }}>
+        <h2 className="sr-only">Listado de usuarios</h2>
         {loading ? (
           <p className="lead">Cargando…</p>
         ) : (
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Estado</th>
-                  <th>Alta</th>
-                  <th>Último acceso</th>
-                  <th style={{ width: '1%' }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.email}</td>
-                    <td>
-                      {u.isActive ? (
-                        <span className="badge badge--ok">Activo</span>
-                      ) : (
-                        <span className="badge badge--off">Inactivo</span>
-                      )}
-                    </td>
-                    <td>{formatDt(u.createdAt)}</td>
-                    <td>{formatDt(u.lastLogin)}</td>
-                    <td>
-                      <div className="table__actions">
-                        <button
-                          type="button"
-                          className="btn btn--ghost btn--small"
-                          onClick={() => void openDetail(u.id)}
-                        >
-                          Detalle
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn--small"
-                          style={{
-                            background: 'var(--surface2)',
-                            color: 'var(--text)',
-                          }}
-                          disabled={busyId === u.id || (userId !== null && u.id === userId)}
-                          onClick={() => void onToggle(u.id, u.email)}
-                        >
-                          {u.isActive ? 'Desactivar' : 'Activar'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <UsersTable
+            users={filteredUsers}
+            busyId={busyId}
+            currentUserId={userId}
+            onToggle={requestToggle}
+            onDetail={(id) => void openDetail(id)}
+          />
         )}
       </section>
 
+      {/* ── Modal: confirmación toggle ── */}
+      {pendingToggle ? (
+        <ConfirmDialog
+          title={pendingToggle.isActive ? 'Desactivar usuario' : 'Activar usuario'}
+          message={
+            pendingToggle.isActive
+              ? `¿Seguro que querés desactivar a ${pendingToggle.email}? No podrá ingresar a la app.`
+              : `¿Querés activar a ${pendingToggle.email}? Recuperará el acceso a la app.`
+          }
+          confirmLabel={pendingToggle.isActive ? 'Sí, desactivar' : 'Sí, activar'}
+          cancelLabel="Cancelar"
+          danger={pendingToggle.isActive}
+          onConfirm={() => void confirmToggle()}
+          onCancel={cancelToggle}
+        />
+      ) : null}
+
+      {/* ── Modal: detalle de usuario ── */}
       {detailOpen ? (
         <div
           className="modal-backdrop"
@@ -220,7 +252,12 @@ export function AdminUsersPage() {
           <div className="modal" role="dialog" aria-modal="true" aria-labelledby="admin-detail-title">
             <div className="modal__head">
               <h2 id="admin-detail-title">Detalle de usuario</h2>
-              <button type="button" className="btn btn--ghost btn--small" onClick={closeDetail}>
+              <button
+                type="button"
+                id="admin-detail-close"
+                className="btn btn--ghost btn--small"
+                onClick={closeDetail}
+              >
                 Cerrar
               </button>
             </div>
@@ -273,7 +310,7 @@ export function AdminUsersPage() {
                     <dd>{formatDt(detail.lastLogin)}</dd>
                   </div>
                   <div>
-                    <dt>Dispositivos registrados</dt>
+                    <dt>Dispositivos</dt>
                     <dd>{detail.deviceCount}</dd>
                   </div>
                 </dl>

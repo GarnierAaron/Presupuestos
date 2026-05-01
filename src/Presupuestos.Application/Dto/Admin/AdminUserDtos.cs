@@ -9,6 +9,8 @@ public class AdminUserListItemDto
     public bool IsActive { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastLogin { get; set; }
+    public Guid? TenantId { get; set; }
+    public string? TenantName { get; set; }
 }
 
 public class AdminUserDetailDto
