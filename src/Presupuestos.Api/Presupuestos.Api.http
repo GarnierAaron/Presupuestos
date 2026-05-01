@@ -1,0 +1,91 @@
+@host = http://localhost:5279
+@tenant = 00000000-0000-0000-0000-000000000001
+@user = 00000000-0000-0000-0000-000000000002
+@token = reemplazar_con_access_token
+
+### Registro (crea tenant + usuario admin)
+POST {{host}}/api/Auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@empresa.com",
+  "password": "Password1!",
+  "tenantName": "Mi imprenta"
+}
+
+### Login (con DeviceControl.Enabled=true añade deviceId)
+POST {{host}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@empresa.com",
+  "password": "Password1!",
+  "deviceId": "mi-app-ios-uuid-o-stable-id",
+  "deviceName": "iPhone de Ana"
+}
+
+### Items (requiere Authorization: Bearer + X-Device-Id si DeviceControl está activo)
+GET {{host}}/api/Items
+Authorization: Bearer {{token}}
+X-Device-Id: mi-app-ios-uuid-o-stable-id
+
+### Compat: Items con cabeceras (sin JWT) — el endpoint sigue exigiendo autenticación; usa token o ajusta política
+# GET {{host}}/api/Items
+# X-Tenant-Id: {{tenant}}
+
+### Control remoto / kill switch (sin JWT ni X-Tenant-Id)
+GET {{host}}/api/app-config
+
+### Con versión (query)
+GET {{host}}/api/app-config?version=1.2.0
+
+### Con versión (cabecera)
+GET {{host}}/api/app-config
+X-App-Version: 1.2.0
+
+### Ejemplo de cálculo (público)
+GET {{host}}/api/CalculationExample
+Accept: application/json
+
+### Ejemplo pipeline flexible (público)
+GET {{host}}/api/CalculationExample/flexible
+Accept: application/json
+
+### Motor flexible: activar por tenant
+PUT {{host}}/api/PricingSettings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "flexiblePricingEnabled": true
+}
+
+### Listar reglas (orden SortOrder)
+GET {{host}}/api/PricingRules
+Authorization: Bearer {{token}}
+
+### Crear regla: margen 30%
+POST {{host}}/api/PricingRules
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Margen 30",
+  "type": "Percentage",
+  "value": 30,
+  "sortOrder": 0
+}
+
+### Crear regla: fórmula (costo*1.5+200 es ilustrativo; en servicios reales material suele ser el costo unitario)
+POST {{host}}/api/PricingRules
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Ajuste fórmula",
+  "type": "Formula",
+  "expression": "material * 1.5 + 0.2 * qty",
+  "sortOrder": 10
+}
+
+###

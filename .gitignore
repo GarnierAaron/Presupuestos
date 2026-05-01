@@ -1,0 +1,17 @@
+# Visual Studio / VS Code
+.vs/
+*.user
+*.suo
+
+# .NET
+**/bin/
+**/obj/
+**/out/
+
+# Node / frontend
+client/node_modules/
+client/dist/
+
+# OS
+Thumbs.db
+Desktop.ini
