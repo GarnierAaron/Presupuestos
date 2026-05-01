@@ -37,6 +37,16 @@ export function UserRow({ user, isBusy, isCurrentUser, onToggle, onDetail }: Use
         )}
       </td>
       <td>
+        {user.planName ? (
+          <span className="badge" style={{ background: 'var(--surface2)', color: 'var(--text)' }}>
+            {user.planName}
+          </span>
+        ) : (
+          <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>—</span>
+        )}
+      </td>
+      <td>{formatDt(user.planEndDate)}</td>
+      <td>
         {user.isActive ? (
           <span className="badge badge--ok">Activo</span>
         ) : (

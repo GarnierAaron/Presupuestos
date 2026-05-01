@@ -27,6 +27,8 @@ export function UsersTable({
           <tr>
             <th>Email</th>
             <th>Organización</th>
+            <th>Plan</th>
+            <th>Fin de plan</th>
             <th>Estado</th>
             <th>Fecha de alta</th>
             <th>Último login</th>

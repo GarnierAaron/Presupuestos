@@ -66,7 +66,9 @@ public class AdminUserService : IAdminUserService
             CreatedAt = u.CreatedAt,
             LastLogin = u.LastLogin,
             TenantId = u.TenantId,
-            TenantName = u.Tenant?.Name
+            TenantName = u.Tenant?.Name,
+            PlanName = u.Tenant?.Subscriptions.FirstOrDefault()?.PlanName,
+            PlanEndDate = u.Tenant?.Subscriptions.FirstOrDefault()?.EndDate
         };
 
     private static AdminUserDetailDto MapDetail(User u, int deviceCount) =>
@@ -82,6 +84,8 @@ public class AdminUserService : IAdminUserService
             ExpirationDate = u.ExpirationDate,
             TenantId = u.TenantId,
             TenantName = u.Tenant?.Name,
+            PlanName = u.Tenant?.Subscriptions.FirstOrDefault()?.PlanName,
+            PlanEndDate = u.Tenant?.Subscriptions.FirstOrDefault()?.EndDate,
             DeviceCount = deviceCount
         };
 }

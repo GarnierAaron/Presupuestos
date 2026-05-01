@@ -11,6 +11,8 @@ public class AdminUserListItemDto
     public DateTimeOffset? LastLogin { get; set; }
     public Guid? TenantId { get; set; }
     public string? TenantName { get; set; }
+    public string? PlanName { get; set; }
+    public DateTime? PlanEndDate { get; set; }
 }
 
 public class AdminUserDetailDto
@@ -25,6 +27,8 @@ public class AdminUserDetailDto
     public DateTimeOffset? ExpirationDate { get; set; }
     public Guid? TenantId { get; set; }
     public string? TenantName { get; set; }
+    public string? PlanName { get; set; }
+    public DateTime? PlanEndDate { get; set; }
     public int DeviceCount { get; set; }
 }
 

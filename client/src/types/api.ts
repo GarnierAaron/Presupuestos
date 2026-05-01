@@ -38,6 +38,8 @@ export interface AdminUserListItemDto {
   lastLogin: string | null
   tenantId: string | null
   tenantName: string | null
+  planName: string | null
+  planEndDate: string | null
 }
 
 export interface AdminUserDetailDto {
@@ -52,6 +54,8 @@ export interface AdminUserDetailDto {
   expirationDate: string | null
   tenantId: string | null
   tenantName: string | null
+  planName: string | null
+  planEndDate: string | null
   deviceCount: number
 }
 

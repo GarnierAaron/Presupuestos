@@ -22,12 +22,14 @@ public class UserRepository : IUserRepository
     public async Task<IReadOnlyList<User>> ListAllForAdminAsync(CancellationToken cancellationToken = default) =>
         await _db.Users.AsNoTracking()
             .Include(u => u.Tenant)
+                .ThenInclude(t => t!.Subscriptions.Where(s => s.Status == SubscriptionStatuses.Active))
             .OrderBy(u => u.Email)
             .ToListAsync(cancellationToken);
 
     public async Task<User?> GetByIdWithTenantForAdminAsync(Guid id, CancellationToken cancellationToken = default) =>
         await _db.Users.AsNoTracking()
             .Include(u => u.Tenant)
+                .ThenInclude(t => t!.Subscriptions.Where(s => s.Status == SubscriptionStatuses.Active))
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
     public async Task<User?> GetByIdGlobalTrackedAsync(Guid id, CancellationToken cancellationToken = default) =>

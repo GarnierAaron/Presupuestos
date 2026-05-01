@@ -298,7 +298,24 @@ export function AdminUsersPage() {
                     </dd>
                   </div>
                   <div>
+                    <dt>Plan</dt>
+                    <dd>
+                      {detail.planName ? (
+                        <span className="badge" style={{ background: 'var(--surface2)', color: 'var(--text)' }}>
+                          {detail.planName}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>—</span>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Vencimiento plan</dt>
+                    <dd>{formatDt(detail.planEndDate)}</dd>
+                  </div>
+                  <div>
                     <dt>Caducidad cuenta</dt>
+
                     <dd>{formatDt(detail.expirationDate)}</dd>
                   </div>
                   <div>
