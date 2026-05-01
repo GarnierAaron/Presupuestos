@@ -107,7 +107,7 @@ Objetivo: poder **cobrar**, **dar soporte** y **generar confianza** sin un big-b
 
 Priorizar según la sección **SaaS vendible** arriba; estos son los más acoplados al código actual:
 
-- [ ] **Cliente suscripciones**: UI planes, llamada a `POST /api/Subscriptions/create`, redirección a `checkoutUrl`, banner si 403 por `SubscriptionAccess`, pantalla “Mi plan” con `GET /api/Subscriptions/me`
+- [x] **Cliente suscripciones**: UI planes, llamada a `POST /api/Subscriptions/create`, redirección a `checkoutUrl`, banner si 403 por `SubscriptionAccess`, pantalla “Mi plan” con `GET /api/Subscriptions/me`
 - [ ] **Suscripciones — próximos avances** (ver sección dedicada abajo)
 - [ ] **Admin**: editar `ExpirationDate` desde UI + endpoint `PATCH` acotado a super admin
 - [x] **Admin**: filtros (activo, texto email) en UI — paginación backend pendiente

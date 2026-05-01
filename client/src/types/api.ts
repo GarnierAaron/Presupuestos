@@ -142,3 +142,20 @@ export interface BudgetDto {
   createdByUserId: string | null
   details: BudgetDetailDto[]
 }
+
+export interface CreateSubscriptionRequestDto {
+  plan: string
+}
+
+export interface CreateSubscriptionResponseDto {
+  subscriptionId: string
+  checkoutUrl: string | null
+  status: string
+}
+
+export interface MySubscriptionResponseDto {
+  plan: string
+  status: string
+  endDate: string | null
+  startDate: string | null
+}

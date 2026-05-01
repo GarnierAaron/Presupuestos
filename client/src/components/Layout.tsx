@@ -85,6 +85,9 @@ export function Layout() {
               <NavLink to="/budgets/new" className={navClass} onClick={closeSidebar}>
                 Nuevo presupuesto
               </NavLink>
+              <NavLink to="/pricing" className={navClass} onClick={closeSidebar}>
+                Suscripción
+              </NavLink>
             </>
           )}
         </nav>

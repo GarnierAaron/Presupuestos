@@ -10,6 +10,7 @@ import { AdminUsersPage } from './pages/AdminUsersPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ItemsPage } from './pages/ItemsPage'
 import { LoginPage } from './pages/LoginPage'
+import { PricingPage } from './pages/PricingPage'
 import { ServiceEditPage } from './pages/ServiceEditPage'
 import { ServicesPage } from './pages/ServicesPage'
 
@@ -28,6 +29,7 @@ export default function App() {
                 <Route path="/services/:id" element={<ServiceEditPage />} />
                 <Route path="/budgets" element={<BudgetsListPage />} />
                 <Route path="/budgets/new" element={<BudgetCreatePage />} />
+                <Route path="/pricing" element={<PricingPage />} />
                 <Route element={<SuperAdminRoute />}>
                   <Route path="/admin" element={<AdminUsersPage />} />
                 </Route>
